@@ -133,7 +133,6 @@ export const useRecipeEditForm = createDialogForm({
           />
           <span>Skip Required Plugins</span>
         </Stack>
-        <FormHelperText sx={{ marginBlock: 0 }}>Don't include required plugins.</FormHelperText>
         {!!recipeForm.controls.skip_required_plugins.value && <FormHelperText sx={{ marginBlock: 0 }}>Don't include required plugins.</FormHelperText>}
         {!recipeForm.controls.skip_required_plugins.value && <FormHelperText sx={{ marginBlock: 0 }}>Include required plugins.</FormHelperText>}
       </Stack>
