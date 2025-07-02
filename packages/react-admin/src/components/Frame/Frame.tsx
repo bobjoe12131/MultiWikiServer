@@ -189,7 +189,7 @@ export function PageRoot() {
             aria-expanded={open ? 'true' : undefined}
             endIcon={<Avatar />}
           >
-            indexJson.username
+	  {indexJson.username}
           </Button>
         </Tooltip>
         <Menu
