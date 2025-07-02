@@ -180,16 +180,17 @@ export function PageRoot() {
       right={userIsLoggedIn ? <>
         {/* <IconButton onClick={() => { }} sx={{ padding: 2 }} size="large"><SettingsIcon /></IconButton> */}
         <Tooltip title="User menu">
-          <IconButton
+          <Button
             onClick={handleClick}
             size="small"
             sx={{ ml: 2 }}
             aria-controls={open ? 'account-menu' : undefined}
             aria-haspopup="true"
             aria-expanded={open ? 'true' : undefined}
+            endIcon={<Avatar />}
           >
-            <Avatar></Avatar>
-          </IconButton>
+            indexJson.username
+          </Button>
         </Tooltip>
         <Menu
           anchorEl={anchorEl}
