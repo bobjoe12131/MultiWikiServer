@@ -183,13 +183,13 @@ export function PageRoot() {
           <Button
             onClick={handleClick}
             size="small"
-            sx={{ ml: 2 }}
+            sx={{ ml: 2, "text-transform": "none" }}
             aria-controls={open ? 'account-menu' : undefined}
             aria-haspopup="true"
             aria-expanded={open ? 'true' : undefined}
             endIcon={<Avatar />}
           >
-            indexJson.username
+	  {indexJson.username}
           </Button>
         </Tooltip>
         <Menu
@@ -202,9 +202,9 @@ export function PageRoot() {
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
           <MenuItem onClick={handleClickProfile}>
-            <ListItemIcon ><Avatar sx={{ width: 24, height: 24 }} /></ListItemIcon>
-            {indexJson.username}
-          </MenuItem>
+	  <ListItemIcon><PersonIcon fontSize="small" /></ListItemIcon>
+          Profile
+	  </MenuItem>
           {/* <MenuItem onClick={handleClose}>
             <ListItemIcon><Settings fontSize="small" /></ListItemIcon>Settings
           </MenuItem> */}
@@ -229,4 +229,4 @@ export function PageRoot() {
       </ErrorBoundary>
     </Frame >
   );
-}
+     }
