@@ -183,7 +183,7 @@ export function PageRoot() {
           <Button
             onClick={handleClick}
             size="small"
-            sx={{ ml: 2, "text-transform": "none" }}
+            sx={{ ml: 2, textTransform: 'none', fontSize: 'large', color: 'white'}}
             aria-controls={open ? 'account-menu' : undefined}
             aria-haspopup="true"
             aria-expanded={open ? 'true' : undefined}
