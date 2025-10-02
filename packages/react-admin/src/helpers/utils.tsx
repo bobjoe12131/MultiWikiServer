@@ -50,6 +50,34 @@ export function DataLoader<T, P>(
   }
 }
 
+export function LazyDataLoaders<T, P, K>(
+  loaders: (props: P) => Promise<T>,
+  useRender: (data: T, refresh: Refresher<T>, props: P) => ReactNode
+) {
+  return (props: P) => {
+
+    const [refreshData, setRefreshData] = useState(new PromiseSubject<T>());
+    const [result, setResult] = useState<T | null>(null);
+
+    const refresh = useCallback(() => {
+      const promise = new PromiseSubject<T>();
+      setRefreshData(promise);
+      return promise.promise;
+    }, []);
+
+    useAsyncEffect(async () => {
+      const result = await loader(props);
+      setResult(result);
+      refreshData.resolve(result);
+    }, undefined, undefined, [refreshData]);
+
+    if (!result) return null;
+
+    return <Render useRender={() => useRender(result, refresh, props)} />;
+
+  }
+}
+
 export interface Refresher<T> {
   (): Promise<T>;
   // promise: Promise<T>;
@@ -72,9 +100,12 @@ export function Render({ useRender }: { useRender: () => ReactNode }) { return u
 
 export type UseIndexJson = DataLoaderContext<ART<typeof getIndexJson>>;
 
-export const IndexJsonContext = React.createContext<UseIndexJson>(null as any);
+export const InfoJsonContext = React.createContext<UseIndexJson | null>(null);
 
-export function useIndexJson() { return React.useContext(IndexJsonContext); }
+export function useIndexJson() {
+  let ctx = React.useContext(InfoJsonContext);
+  if (ctx === null) throw new Error("index_json has not been loaded at this point.")
+}
 
 export type IndexJson = ART<typeof getIndexJson>;
 
