@@ -9,6 +9,7 @@ import { Button, ButtonProps } from "@mui/material";
 import { SessionManagerMap } from "@tiddlywiki/mws/src/services/sessions";
 import { SettingsManagerMap } from "@tiddlywiki/mws/src/managers/admin-settings";
 import type { ServerToReactAdmin } from "@tiddlywiki/mws/src/services/setupDevServer";
+import { UserStatusResponse } from "@tiddlywiki/mws/src/managers/user-status";
 
 
 type MapLike = { entries: () => Iterable<[string, any]> };
@@ -70,11 +71,60 @@ export class PromiseSubject<T> {
 }
 export function Render({ useRender }: { useRender: () => ReactNode }) { return useRender(); }
 
+
+function makeRefresher<T>(fn: () => Promise<T>): DataLoaderContext<T> {
+
+  const [refreshData, setRefreshData] = useState(new PromiseSubject<T>());
+  const [result, setResult] = useState<T | null>(null);
+
+  const refresh = useCallback(() => {
+    const promise = new PromiseSubject<T>();
+    setRefreshData(promise);
+    return promise.promise;
+  }, []);
+
+  useAsyncEffect(async () => {
+    const result = await fn();
+    setResult(result);
+    refreshData.resolve(result);
+  }, undefined, undefined, [refreshData]);
+
+  if (!result) throw new Error("result is null");
+
+  return [result, refresh]
+}
+
 export type UseIndexJson = DataLoaderContext<ART<typeof getIndexJson>>;
+export type UseUserStatus = DataLoaderContext<ART<typeof getUserStatus>>
+interface JsonContextMap {
+  null: null
+  "/admin/index_json": UseIndexJson
+  "/user/status": UseUserStatus
+}
 
-export const IndexJsonContext = React.createContext<UseIndexJson>(null as any);
+type JsonContext<K extends keyof JsonContextMap = keyof JsonContextMap> =
+  { type: K, data: JsonContextMap[K] }
 
-export function useIndexJson() { return React.useContext(IndexJsonContext); }
+
+export const IndexJsonContext = React.createContext<JsonContext>({ type: "null", data: null });
+
+export function useIndexJson(): UseIndexJson {
+  let obj = React.useContext(IndexJsonContext);
+  if (!(obj.type == "/admin/index_json")) {
+    obj.type = "/admin/index_json"
+    obj.data = makeRefresher(getIndexJson)
+  }
+  return obj.data as UseIndexJson
+}
+
+export function useUserStatus(): UseUserStatus {
+  let obj = React.useContext(IndexJsonContext);
+  if (!(obj.type == "/admin/index_json" || obj.type == "/user/status")) {
+    obj.type = "/user/status"
+    obj.data = makeRefresher(getUserStatus)
+  }
+  return obj.data as UseUserStatus
+}
 
 export type IndexJson = ART<typeof getIndexJson>;
 
@@ -87,55 +137,66 @@ declare global {
 }
 type t = StatusManagerMap["index_json"]
 
-function postManager<K extends keyof StatusManagerMap>(key: K): StatusManagerMap[K]
-function postManager<K extends keyof RecipeManagerMap>(key: K): RecipeManagerMap[K]
-function postManager<K extends keyof UserManagerMap>(key: K): UserManagerMap[K]
-function postManager<K extends keyof SettingsManagerMap>(key: K): SettingsManagerMap[K]
-function postManager(key: string) {
-  return async (data: any) => {
-    const req = await fetch(pathPrefix + "/admin/" + key, {
-      method: "POST",
+
+function manager({ method, path }: { method: string, path: string })
+  : (key: string) => (data: any) => Promise<unknown> {
+  return key => async data => {
+    const req = await fetch(pathPrefix + path + "/" + key, {
+      method,
       headers: {
         'Content-Type': 'application/json',
         "X-Requested-With": "TiddlyWiki"
       },
       body: JSON.stringify(data),
     });
-    if (!req.ok) throw new Error(`Failed to fetch data for /admin/${key}: ${await req.text()}`);
+    if (!req.ok) throw new Error(`Failed to fetch data for ${path}/${key}: ${await req.text()}`);
     return await req.json();
-  };
+  }
+}
 
+function adminPostManager<K extends keyof StatusManagerMap>(key: K): StatusManagerMap[K]
+function adminPostManager<K extends keyof RecipeManagerMap>(key: K): RecipeManagerMap[K]
+function adminPostManager<K extends keyof UserManagerMap>(key: K): UserManagerMap[K]
+function adminPostManager<K extends keyof SettingsManagerMap>(key: K): SettingsManagerMap[K]
+function adminPostManager(key: string) {
+  return manager({ method: "POST", path: "/admin" })(key)
+}
+
+function userStatusGetManager(): () => Promise<UserStatusResponse> {
+  return manager({ method: "GET", path: "/user" })("status") as any
 }
 
 interface ManagerMap extends RecipeManagerMap, UserManagerMap, StatusManagerMap, SettingsManagerMap {
   // prisma: typeof proxy;
+  user_status: (data: undefined) => Promise<UserStatusResponse>
 }
 
 
 export const serverRequest: ManagerMap = {
-  index_json: postManager("index_json"),
+  index_json: adminPostManager("index_json"),
 
-  user_edit_data: postManager("user_edit_data"),
-  user_list: postManager("user_list"),
-  user_create: postManager("user_create"),
-  user_delete: postManager("user_delete"),
-  user_update: postManager("user_update"),
-  user_update_password: postManager("user_update_password"),
+  user_edit_data: adminPostManager("user_edit_data"),
+  user_list: adminPostManager("user_list"),
+  user_create: adminPostManager("user_create"),
+  user_delete: adminPostManager("user_delete"),
+  user_update: adminPostManager("user_update"),
+  user_update_password: adminPostManager("user_update_password"),
+  user_status: userStatusGetManager(),
 
-  recipe_create_or_update: postManager("recipe_create_or_update"),
-  recipe_delete: postManager("recipe_delete"),
-  recipe_acl_update: postManager("recipe_acl_update"),
+  recipe_create_or_update: adminPostManager("recipe_create_or_update"),
+  recipe_delete: adminPostManager("recipe_delete"),
+  recipe_acl_update: adminPostManager("recipe_acl_update"),
 
-  bag_create_or_update: postManager("bag_create_or_update"),
-  bag_delete: postManager("bag_delete"),
-  bag_acl_update: postManager("bag_acl_update"),
+  bag_create_or_update: adminPostManager("bag_create_or_update"),
+  bag_delete: adminPostManager("bag_delete"),
+  bag_acl_update: adminPostManager("bag_acl_update"),
 
-  role_create: postManager("role_create"),
-  role_update: postManager("role_update"),
+  role_create: adminPostManager("role_create"),
+  role_update: adminPostManager("role_update"),
   // role_delete: postManager("role_delete"),
 
-  settings_read: postManager("settings_read"),
-  settings_update: postManager("settings_update"),
+  settings_read: adminPostManager("settings_read"),
+  settings_update: adminPostManager("settings_update"),
 
   // prisma: proxy,
 }
@@ -172,6 +233,10 @@ export async function getIndexJson() {
     // getBagOwnerName,
     hasRecipeAclAccess,
   }
+}
+
+export async function getUserStatus() {
+  return await serverRequest.user_status(undefined)
 }
 
 

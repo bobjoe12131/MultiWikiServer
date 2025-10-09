@@ -1,4 +1,4 @@
-import { SendErrorItem } from "@tiddlywiki/server";
+import type { SendErrorItem } from "@tiddlywiki/server";
 declare module "@tiddlywiki/server" {
   interface SendErrorReasonData {
     "RECIPE_NOT_FOUND":
@@ -47,3 +47,4 @@ declare module "@tiddlywiki/server" {
     SendErrorItem<500, { found: any }>
   }
 }
+
