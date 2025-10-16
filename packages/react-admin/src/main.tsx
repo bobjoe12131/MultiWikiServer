@@ -33,13 +33,13 @@ export const App = DataLoader(async () => {
     <StrictMode>
       <ThemeProvider theme={theme} defaultMode="system" noSsr>
         <CssBaseline enableColorScheme />
-        <IndexJsonContext.Provider value={null}>
+        <IndexJsonContext.Provider value={{ type: "null", data: null }}>
           <ErrorBoundary fallback={null} >
             {route === "/login" ? <Login /> : <PageRoot />}
           </ErrorBoundary>
         </IndexJsonContext.Provider>
       </ThemeProvider>
-    </StrictMode>
+    </StrictMode >
     // <StrictMode>
     //   <ThemeProvider theme={theme}>
     //     <CssBaseline />
