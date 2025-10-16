@@ -24,7 +24,7 @@ const theme = createTheme({
 //https://v5.mui.com/material-ui/getting-started/
 
 export const App = DataLoader(async () => {
-  return await getIndexJson();
+  return
 }, (indexJson, refresh, props) => {
   useEffect(() => { window.document.documentElement.classList.add("loaded"); }, []);
   const route = location.pathname.slice(pathPrefix.length);
