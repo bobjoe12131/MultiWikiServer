@@ -24,8 +24,10 @@ const theme = createTheme({
 //https://v5.mui.com/material-ui/getting-started/
 
 export const App = DataLoader(async () => {
-  return
+  return "nothing, ok???"
 }, (indexJson, refresh, props) => {
+  console.log("fe")
+
   useEffect(() => { window.document.documentElement.classList.add("loaded"); }, []);
   const route = location.pathname.slice(pathPrefix.length);
   // return <TestColors/>;

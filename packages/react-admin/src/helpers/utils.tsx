@@ -31,21 +31,21 @@ export function DataLoader<T, P>(
 
     const [refreshData, setRefreshData] = useState(new PromiseSubject<T>());
     const [result, setResult] = useState<T | null>(null);
-
+    console.log("fji")
     const refresh = useCallback(() => {
       const promise = new PromiseSubject<T>();
       setRefreshData(promise);
       return promise.promise;
     }, []);
-
+    console.log("fji")
     useAsyncEffect(async () => {
       const result = await loader(props);
       setResult(result);
       refreshData.resolve(result);
     }, undefined, undefined, [refreshData]);
-
+    console.log("fji")
     if (!result) return null;
-
+    console.log("fji")
     return <Render useRender={() => useRender(result, refresh, props)} />;
 
   }
